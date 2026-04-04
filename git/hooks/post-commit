@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+
+if [[ ! "$LATEST_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+    LATEST_TAG="${LATEST_TAG:-v0.0.0}"
+fi
+
+VERSION="${LATEST_TAG#v}"
+IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+COMMIT_MSG=$(git log -1 --format="%s")
+BUMP_TYPE="none"
+
+if [[ "$COMMIT_MSG" =~ ^[a-zA-Z]+(\(.*\))?!: ]]; then
+    BUMP_TYPE="major"
+elif [[ "$COMMIT_MSG" =~ ^feat(\(.*\))?: ]]; then
+    BUMP_TYPE="minor"
+elif [[ "$COMMIT_MSG" =~ ^fix(\(.*\))?: ]]; then
+    BUMP_TYPE="patch"
+fi
+
+if [[ "$BUMP_TYPE" = "none" ]]; then
+    exit 0
+fi
+
+if [[ "$BUMP_TYPE" = "major" ]]; then
+    MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0
+elif [[ "$BUMP_TYPE" = "minor" ]]; then
+    MINOR=$((MINOR + 1)); PATCH=0
+else
+    PATCH=$((PATCH + 1))
+fi
+
+NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
+
+if [ -n "$(git tag -l "$NEW_VERSION")" ]; then
+    echo "Skipping tag $NEW_VERSION — already exists." >&2
+    exit 0
+fi
+
+git tag "$NEW_VERSION"
+echo "$NEW_VERSION" > .version
+echo "Auto-tagged new version: $NEW_VERSION (triggered by $BUMP_TYPE)"

@@ -1,0 +1,40 @@
+[core]
+    excludesfile = ~/.gitconfig/.gitignore
+    hooksPath = ~/.gitconfig/hooks
+[init]
+	defaultbranch = main
+[user]
+	email = jannoguer@gmail.com
+	name = jannoguer
+[alias]
+    ; Creates a commit with no file changes
+    empty-commit = commit --allow-empty
+
+    ; Commits with a blank message
+    empty-commit-message = commit --allow-empty-message -m \"\"
+
+    ; Removes the last commit and keeps changes staged
+    undo = reset --soft HEAD~1
+
+    ; Applies and removes the latest stash
+    unstash = stash pop
+
+    ; Lists all local and remote branches with commit details
+    branches = !git --no-pager branch -avv
+
+    ; Lists all custom Git aliases you have configured
+    aliases = !git config --global --list | grep alias | cut -d'.' -f2 | cut -d'=' -f1
+
+    ; Tags a branch as archived, then force-deletes it locally
+    tuck = "!f() { git tag \"archive/$1\" \"$1\" && git branch -D \"$1\"; }; f"
+
+    ; Restores an archived branch from its tag and checks it out
+    untuck = "!f() { git checkout -b \"$1\" \"archive/$1\"; }; f"
+
+    ; Interactive rebase that preserves the original author dates
+    true-rebase = rebase -i --committer-date-is-author-date
+    
+    ; Prints your personal author signature
+    made-by = "!echo 'Aliases by jannoguer. Keep it sharp.'"
+[commit]
+	template = ~/.gitconfig/.gitmessage
