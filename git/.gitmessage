@@ -1,13 +1,4 @@
 
 
-# Concise summary of what happened
-
-# - What changed
-# - Why it changed
-# - (optional) Caution / Notes
-
-# Type of commit subject prefixes
-# [fix | feat | build | chore | ci | docs | refactor | perf | test | revert]
-# Optional scope in parentheses after type (e.g., fix(auth))
-# Append ! after type/scope to denote breaking change (e.g., feat(api)!)
+# feat | fix | docs | style | refactor | test | chore](<scope>): <subject>
 
