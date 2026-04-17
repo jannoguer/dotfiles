@@ -3,22 +3,33 @@
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Define source and destination
+# GIT ---
 GIT_SOURCE_DIR="$SCRIPT_DIR/../git"
-GIT_DEST_DIR="$HOME/.gitconfig"
+GIT_CONFIG_FILE="${GIT_CONFIG_GLOBAL:-$HOME/.config/git/config}"
+GIT_DEST_DIR="$(dirname "$GIT_CONFIG_FILE")"
 
-# Check if ~/.gitconfig exists AND is a standard file (not a directory)
-if [ -f "$GIT_DEST_DIR" ]; then
-    echo "Found an existing .gitconfig file. Backing it up to .gitconfig.bak..."
-    mv "$GIT_DEST_DIR" "$GIT_DEST_DIR.bak"
-fi
-
-# Ensure the destination directory exists
 mkdir -p "$GIT_DEST_DIR"
 
 echo "Syncing git configuration files to $GIT_DEST_DIR..."
 
-# Copy contents interactively and recursively
 cp -riv "$GIT_SOURCE_DIR/." "$GIT_DEST_DIR/"
+
+if [ "$GIT_CONFIG_FILE" != "$GIT_DEST_DIR/.gitconfig" ]; then
+    mv "$GIT_DEST_DIR/.gitconfig" "$GIT_CONFIG_FILE"
+fi
+
+chmod +x "$GIT_DEST_DIR"/hooks/*
+# ---
+
+# CLAUDE
+CLAUDE_SOURCE_DIR="$SCRIPT_DIR/../claude"
+CLAUDE_DEST_DIR="$HOME/.claude"
+
+mkdir -p "$CLAUDE_DEST_DIR"
+
+echo "Syncing claude configuration files to $CLAUDE_DEST_DIR..."
+
+cp -riv "$CLAUDE_SOURCE_DIR/." "$CLAUDE_DEST_DIR/"
+# ---
 
 echo "Done!"
