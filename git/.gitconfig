@@ -1,6 +1,6 @@
 [core]
-    excludesfile = ~/.gitconfig/.gitignore
-    hooksPath = ~/.gitconfig/hooks
+    excludesfile = %(prefix)/.gitignore
+    hooksPath = %(prefix)/hooks
 [init]
 	defaultbranch = main
 [user]
@@ -37,4 +37,4 @@
     ; Prints your personal author signature
     made-by = "!echo 'Aliases by jannoguer. Keep it sharp.'"
 [commit]
-	template = ~/.gitconfig/.gitmessage
+	template = %(prefix)/.gitmessage
