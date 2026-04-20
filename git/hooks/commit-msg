@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+COMMIT_MSG_FILE="$1"
+
+# Skip auto-generated subjects that should not be length-checked.
+GIT_DIR=$(git rev-parse --git-dir)
+[ -f "$GIT_DIR/MERGE_HEAD" ]  && exit 0
+[ -f "$GIT_DIR/REVERT_HEAD" ] && exit 0
+
+SUBJECT=$(head -1 "$COMMIT_MSG_FILE")
+
+# fixup!/squash! commits are consumed by rebase --autosquash; skip them.
+[[ "$SUBJECT" =~ ^(fixup|squash)! ]] && exit 0
+
+MAX_LEN="${COMMIT_MSG_MAX_LEN:-50}"
+SUBJECT_LEN=$(printf '%s' "$SUBJECT" | wc -m | tr -d ' ')
+
+if [ "$SUBJECT_LEN" -gt "$MAX_LEN" ]; then
+    echo "error: subject line is $SUBJECT_LEN characters (max $MAX_LEN)." >&2
+    echo "  $SUBJECT" >&2
+    echo "Set COMMIT_MSG_MAX_LEN to override the limit." >&2
+    exit 1
+fi
