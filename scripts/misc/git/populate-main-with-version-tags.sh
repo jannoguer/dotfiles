@@ -50,7 +50,7 @@ git log --reverse --format="%H" "$LATEST_TAG..HEAD" | while read -r COMMIT_HASH;
     NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
 
     if [ -n "$(git tag -l "$NEW_VERSION")" ]; then
-        echo "Skipping tag $NEW_VERSION — already exists." >&2
+        echo "Skipping tag $NEW_VERSION, already exists." >&2
         continue
     fi
 

@@ -49,7 +49,7 @@ fi
 NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
 
 if [ -n "$(git tag -l "$NEW_VERSION")" ]; then
-    echo "skipping tag $NEW_VERSION — already exists." >&2
+    echo "skipping tag $NEW_VERSION, already exists." >&2
     exit 0
 fi
 
