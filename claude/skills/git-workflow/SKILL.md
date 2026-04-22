@@ -93,10 +93,11 @@ main (production releases)
 ### Format
 
 ```
-<type>(<scope>): <subject>
+<type>[(<scope>)][!]: <subject>
 ```
 
 - Subject line: max 50 characters, imperative mood, no period
+- Both scope and exclamation mark are optional
 - No body, no footer — the subject line is the entire commit message
 - Wrap any PR description or notes in the pull request, not the commit
 
