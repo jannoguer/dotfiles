@@ -1,3 +1,7 @@
 
 
-# [feat | fix | docs | style | refactor | test | chore](<scope>)[!]: <subject>
+# (feat | fix | docs | style | refactor | test | chore)[(<scope>)][!]: <subject> | <subject>
+
+# vim spreadsheet
+# i - insert; esc - quit insert; dd - delete line and copy; p - paste;
+# :wqa - write and quit all windows; :qa! - abort and quit all windows;
