@@ -17,7 +17,6 @@ SUBJECT_LEN=$(printf '%s' "$SUBJECT" | wc -m | tr -d ' ')
 
 if [ "$SUBJECT_LEN" -gt "$MAX_LEN" ]; then
     echo "error: subject line is $SUBJECT_LEN characters (max $MAX_LEN)." >&2
-    echo "  $SUBJECT" >&2
     echo "Set COMMIT_MSG_MAX_LEN to override the limit." >&2
     exit 1
 fi
