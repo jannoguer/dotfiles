@@ -1,6 +1,8 @@
 [core]
     excludesfile = %(prefix)/.gitignore
     hooksPath = %(prefix)/hooks
+    autocrlf = input
+    eol = lf
 [init]
 	defaultbranch = main
 [user]
