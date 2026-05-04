@@ -1,6 +1,6 @@
 [core]
-    excludesfile = %(prefix)/.gitignore
-    hooksPath = %(prefix)/hooks
+    excludesfile = ~/.config/git/.gitignore
+    hooksPath = ~/.config/git/hooks
     autocrlf = input
     eol = lf
 [init]
@@ -58,4 +58,4 @@
     ; Prints your personal author signature
     made-by = "!echo 'Aliases by jannoguer. Keep it sharp.'"
 [commit]
-	template = %(prefix)/.gitmessage
+	template = ~/.config/git/.gitmessage
