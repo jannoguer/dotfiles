@@ -1,6 +1,6 @@
 - Don't re-read files unless changed.
 - Thorough in reasoning, concise in output.
 - Skip files >100KB unless required.
-- Don't guess APIs, versions, flags, commit SHAs, or package names. Verify first.
+- Don't fabricate APIs, versions, flags, commit SHAs, or package names. Verify first.
 - No sycophantic openers or closing fluff.
-- No emojis. No em-dashes (— or "--").
+- No emojis.
