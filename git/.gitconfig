@@ -9,6 +9,9 @@
 	email = jannoguer@gmail.com
 	name = jannoguer
 [alias]
+    ; Shortcut for `git status` command
+    s = status
+
     ; Creates a commit with no file changes
     empty-commit = commit --allow-empty
 
@@ -26,6 +29,16 @@
 
     ; Lists all custom Git aliases you have configured
     aliases = !git config --global --list | grep alias | cut -d'.' -f2 | cut -d'=' -f1
+
+    ; Stages everything and commits with the message 'wip'
+    wip = !git add -A && git commit -m 'wip'
+
+    ; Undoes the last commit if its message is exactly 'wip', keeping changes unstaged
+    unwip = "!f() { \
+        msg=$(git log -1 --pretty=%B); \
+        [ \"$msg\" = 'wip' ] || { echo \"unwip: last commit message is not 'wip' (got: '$msg')\" >&2; return 1; }; \
+        git reset HEAD~1; \
+    }; f"
 
     ; Tags a branch as archived, then force-deletes it locally
     tuck = "!f() { \
