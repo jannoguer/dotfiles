@@ -28,14 +28,20 @@
     aliases = !git config --global --list | grep alias | cut -d'.' -f2 | cut -d'=' -f1
 
     ; Tags a branch as archived, then force-deletes it locally
-    tuck = "!f() { git tag \"archive/$1\" \"$1\" && git branch -D \"$1\"; }; f"
+    tuck = "!f() { \
+        [ -n \"$1\" ] || { echo 'usage: git tuck <branch>' >&2; return 1; }; \
+        git show-ref --verify --quiet \"refs/heads/$1\" || { echo \"tuck: branch '$1' not found\" >&2; return 1; }; \
+        [ \"$(git symbolic-ref --quiet --short HEAD)\" != \"$1\" ] || { echo 'tuck: cannot tuck the current branch' >&2; return 1; }; \
+        git tag \"archive/$1\" \"$1\" && git branch -D \"$1\"; \
+    }; f"
 
     ; Restores an archived branch from its tag and checks it out
-    untuck = "!f() { git checkout -b \"$1\" \"archive/$1\"; }; f"
+    untuck = "!f() { \
+        [ -n \"$1\" ] || { echo 'usage: git untuck <branch>' >&2; return 1; }; \
+        git show-ref --verify --quiet \"refs/tags/archive/$1\" || { echo \"untuck: tag 'archive/$1' not found\" >&2; return 1; }; \
+        git checkout -b \"$1\" \"archive/$1\"; \
+    }; f"
 
-    ; Interactive rebase that preserves the original author dates
-    true-rebase = rebase -i --committer-date-is-author-date
-    
     ; Prints your personal author signature
     made-by = "!echo 'Aliases by jannoguer. Keep it sharp.'"
 [commit]
