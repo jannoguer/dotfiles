@@ -23,8 +23,7 @@ fi
 VERSION="${LATEST_TAG#v}"
 IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
 
-git log --reverse --format="%H" "$LATEST_TAG..HEAD" | while read -r COMMIT_HASH; do
-    COMMIT_MSG=$(git log -1 --format="%s" "$COMMIT_HASH")
+git log --reverse --format="%H %s" "$LATEST_TAG..HEAD" | while read -r COMMIT_HASH COMMIT_MSG; do
     BUMP_TYPE="none"
 
     if [[ "$COMMIT_MSG" =~ ^[a-zA-Z]+(\(.*\))?!: ]]; then
