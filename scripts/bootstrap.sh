@@ -18,4 +18,10 @@ echo "Syncing vim configuration files..."
 cp -ri "$DOTFILES_DIR/vim/." "$HOME/"
 echo "Vim configuration sync done!"
 
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+  echo "Syncing mintty configuration files..."
+  cp -ri "$DOTFILES_DIR/mintty/." "$HOME/"
+  echo "Mintty configuration sync done!"
+fi
+
 echo "Done!"
