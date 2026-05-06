@@ -1,30 +1,17 @@
 #!/bin/bash
 
-# Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DOTFILES_DIR="$SCRIPT_DIR/.."
 
-# GIT ---
-GIT_SOURCE_DIR="$SCRIPT_DIR/../git"
-GIT_DEST_DIR="$HOME/.config/git"
+echo "Syncing dotfiles from $DOTFILES_DIR to home directory..."
 
-mkdir -p "$GIT_DEST_DIR"
+echo "Syncing git configuration files..."
+cp -riv "$DOTFILES_DIR/git/." "$HOME/"
+chmod +x "$HOME/.config/git"/hooks/*
+echo "Git configuration sync done!"
 
-echo "Syncing git configuration files to $GIT_DEST_DIR..."
-
-cp -riv "$GIT_SOURCE_DIR/." "$GIT_DEST_DIR/"
-
-chmod +x "$GIT_DEST_DIR"/hooks/*
-# ---
-
-# CLAUDE ---
-CLAUDE_SOURCE_DIR="$SCRIPT_DIR/../claude"
-CLAUDE_DEST_DIR="$HOME/.claude"
-
-mkdir -p "$CLAUDE_DEST_DIR"
-
-echo "Syncing claude configuration files to $CLAUDE_DEST_DIR..."
-
-cp -riv "$CLAUDE_SOURCE_DIR/." "$CLAUDE_DEST_DIR/"
-# ---
+echo "Syncing claude configuration files..."
+cp -riv "$DOTFILES_DIR/claude/." "$HOME/"
+echo "Claude configuration sync done!"
 
 echo "Done!"
