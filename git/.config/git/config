@@ -3,6 +3,7 @@
     hooksPath = ~/.config/git/hooks
     autocrlf = input
     eol = lf
+    editor = vim
 [init]
 	defaultbranch = main
 [user]
@@ -11,6 +12,9 @@
 [alias]
     ; Shortcut for `git status` command
     s = status
+
+    ; Shortcut for git log
+    l = log --oneline -n 5
 
     ; Creates a commit with no file changes
     empty-commit = commit --allow-empty
