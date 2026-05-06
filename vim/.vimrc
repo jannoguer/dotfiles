@@ -6,7 +6,8 @@ set shiftwidth=4 " sets the number of spaces used for auto-indentation
 set expandtab " converts tabs into spaces when you press the Tab key
 set smartindent " automatically indents new lines smartly based on standard code structures
 
-nnoremap / /\v " makes Vim regex behave like standard regex
+" this makes Vim regex behave like standard regex
+nnoremap / /\v
 
 set t_Co=256
 
