@@ -14,4 +14,8 @@ echo "Syncing claude configuration files..."
 cp -riv "$DOTFILES_DIR/claude/." "$HOME/"
 echo "Claude configuration sync done!"
 
+echo "Syncing vim configuration files..."
+cp -riv "$DOTFILES_DIR/vim/." "$HOME/"
+echo "Vim configuration sync done!"
+
 echo "Done!"
