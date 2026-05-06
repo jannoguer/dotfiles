@@ -4,4 +4,4 @@
 
 # vim spreadsheet
 # i - insert; esc - quit insert; dd - delete line and copy; p - paste;
-# :wqa - write and quit all windows; :qa! - abort and quit all windows;
+# :wq - write and quit; :q! - abort and quit;
