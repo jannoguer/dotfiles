@@ -59,6 +59,14 @@
         git checkout -b \"$1\" \"archive/$1\"; \
     }; f"
 
+    ; Writes a diff of all changes (staged + unstaged vs HEAD) to a temp file and prints its path
+    diffdump = "!f() { \
+        [ $# -eq 0 ] || { echo 'usage: git diffdump' >&2; return 1; }; \
+        tmp=$(mktemp -t git-XXXXXXX.diff) || return 1; \
+        git diff HEAD > \"$tmp\"; \
+        echo \"$tmp\"; \
+    }; f"
+
     ; Prints your personal author signature
     made-by = "!echo 'Aliases by jannoguer. Keep it sharp.'"
 [commit]
