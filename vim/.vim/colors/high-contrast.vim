@@ -1,4 +1,4 @@
-" Vim color file - High Contrast 16
+" Vim color file - High Contrast
 " Pure 16-color palette (ANSI 0-15) for maximum legibility on any terminal.
 
 set background=dark
@@ -9,7 +9,7 @@ if version > 580
 	endif
 endif
 
-let g:colors_name = "High contrast 16"
+let g:colors_name = "High Contrast"
 
 hi Normal ctermfg=White ctermbg=Black cterm=NONE
 hi Cursor ctermfg=Black ctermbg=White cterm=NONE
