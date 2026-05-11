@@ -1,3 +1,11 @@
+alias c='clear'
+
+alias g='git'
+alias gti='git'
+alias igt='git'
+alias itg='git'
+alias tgi='git'
+
 # Auto-fetch when entering a Git repository.
 # Test with `ls -l .git/FETCH_HEAD`
 #
