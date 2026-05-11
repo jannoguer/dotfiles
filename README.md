@@ -1,1 +1,1 @@
-Personal dotfiles and configurations. Run `scripts/bootstrap.sh` to sync your environment.
+Personal dotfiles and configurations. Run `scripts/bootstrap.sh` to sync environments (`-h` or `--help` for help).
