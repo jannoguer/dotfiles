@@ -20,6 +20,21 @@ set hlsearch " keeps matches highlighted after pressing Enter
 set clipboard=unnamedplus " syncs Vim clipboard with system clipboard
 let mapleader = " " " sets the leader key to the spacebar
 
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l
+
+" Move selected lines down
+vnoremap J :m '>+1<CR>gv=gv
+" Move selected lines up
+vnoremap K :m '<-2<CR>gv=gv
+
+nnoremap <leader>w :w<CR>
+nnoremap <leader>q :q<CR>
+nnoremap <leader>x :x<CR>
+nnoremap <leader>h :set hlsearch!<CR>
+
 set t_Co=256
 
 if has('termguicolors')
