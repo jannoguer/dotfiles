@@ -67,7 +67,7 @@
         echo \"$tmp\"; \
     }; f"
 
-    ; Prints your personal author signature
+    ; Prints my personal author signature
     made-by = "!echo 'Aliases by jannoguer. Keep it sharp.'"
 [commit]
 	template = ~/.config/git/.gitmessage
