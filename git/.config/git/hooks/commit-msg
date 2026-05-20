@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+if [[ "${SKIP_COMMIT_MSG_LENGTH_CHECK:-false}" == "true" ]]; then
+    exit 0
+fi
+
 COMMIT_MSG_FILE="$1"
 
 # Skip auto-generated subjects that should not be length-checked.
@@ -12,7 +16,7 @@ SUBJECT=$(head -1 "$COMMIT_MSG_FILE")
 # fixup!/squash! commits are consumed by rebase --autosquash; skip them.
 [[ "$SUBJECT" =~ ^(fixup|squash)! ]] && exit 0
 
-MAX_LEN="${COMMIT_MSG_MAX_LEN:-50}"
+MAX_LEN=50
 SUBJECT_LEN=$(printf '%s' "$SUBJECT" | wc -m | tr -d ' ')
 
 if [ "$SUBJECT_LEN" -gt "$MAX_LEN" ]; then
