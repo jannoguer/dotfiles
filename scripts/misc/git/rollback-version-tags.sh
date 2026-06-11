@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-# Get the directory where the script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE}")" >/dev/null 2>&1 && pwd)"
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    echo "Error: not inside a git repository." >&2
+    exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 DOTFILE="$SCRIPT_DIR/.created_tags"
 
 if [ ! -f "$DOTFILE" ]; then
@@ -11,15 +16,16 @@ fi
 
 echo "Starting tag rollback..."
 
-# Read the dotfile line by line
-while IFS= read -r TAG; do
-    if [ -n "$TAG" ]; then
-        # Delete the tag from the local git repository
-        git tag -d "$TAG" 2>/dev/null || true
-        echo "Successfully rolled back tag: $TAG"
+while IFS= read -r TAG || [ -n "$TAG" ]; do
+    if [ -z "$TAG" ]; then
+        continue
+    fi
+    if git tag -d "$TAG" >/dev/null 2>&1; then
+        echo "Rolled back tag: $TAG"
+    else
+        echo "Warning: tag $TAG not found locally, skipping." >&2
     fi
 done < "$DOTFILE"
 
-# Clean up the dotfile after completion
-rm "$DOTFILE"
+rm -f "$DOTFILE"
 echo "Rollback complete."

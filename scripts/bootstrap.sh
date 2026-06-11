@@ -1,7 +1,10 @@
 #!/bin/bash
 
+set -e
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DOTFILES_DIR="$SCRIPT_DIR/.."
+ALL_MODULES="bash,git,claude,vim,mintty"
 
 usage() {
   cat <<EOF
@@ -30,6 +33,7 @@ VERBOSE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -m|--modules)
+      [[ $# -ge 2 ]] || { echo "Missing value for $1" >&2; usage >&2; exit 1; }
       SELECTED="$2"
       shift 2
       ;;
@@ -52,6 +56,16 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -n "$SELECTED" ]]; then
+  IFS=',' read -ra REQUESTED <<< "$SELECTED"
+  for mod in "${REQUESTED[@]}"; do
+    if [[ ",$ALL_MODULES," != *",$mod,"* ]]; then
+      echo "Unknown module: $mod (valid: $ALL_MODULES)" >&2
+      exit 1
+    fi
+  done
+fi
 
 if [[ "$OVERWRITE" -eq 1 ]]; then
   CP_FLAGS="-rf"
@@ -77,7 +91,9 @@ fi
 if should_sync git; then
   echo "Syncing git configuration files..."
   cp $CP_FLAGS "$DOTFILES_DIR/git/." "$HOME/"
-  chmod +x "$HOME/.config/git"/hooks/*
+  if [[ -d "$HOME/.config/git/hooks" ]]; then
+    chmod +x "$HOME/.config/git/hooks"/*
+  fi
   echo "Git configuration sync done!"
 fi
 
@@ -93,10 +109,14 @@ if should_sync vim; then
   echo "Vim configuration sync done!"
 fi
 
-if should_sync mintty && [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
-  echo "Syncing mintty configuration files..."
-  cp $CP_FLAGS "$DOTFILES_DIR/mintty/." "$HOME/"
-  echo "Mintty configuration sync done!"
+if should_sync mintty; then
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    echo "Syncing mintty configuration files..."
+    cp $CP_FLAGS "$DOTFILES_DIR/mintty/." "$HOME/"
+    echo "Mintty configuration sync done!"
+  elif [[ -n "$SELECTED" ]]; then
+    echo "Skipping mintty: not running on Windows (msys/cygwin)."
+  fi
 fi
 
 echo "Done!"
