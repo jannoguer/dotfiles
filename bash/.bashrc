@@ -6,10 +6,6 @@ alias igt='git'
 alias itg='git'
 alias tgi='git'
 
-# Auto-fetch when entering a Git repository.
-# Test with `ls -l .git/FETCH_HEAD`
-#
-# Set AUTO_GIT_FETCH_DISABLE to skip.
 __auto_git_fetch() {
     [ -n "$AUTO_GIT_FETCH_DISABLE" ] && return
 
@@ -40,3 +36,39 @@ case ";${PROMPT_COMMAND:-};" in
     *";__auto_git_fetch;"*) ;;
     *) PROMPT_COMMAND="__auto_git_fetch;${PROMPT_COMMAND:-}" ;;
 esac
+
+whisper() {
+  gzip -9 | age -e "$@"
+}
+
+yell() {
+  local output=""
+  local age_args=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -o|--output)
+        if [[ -z "$2" ]]; then
+          echo "Error: $1 requires a file argument." >&2
+          return 1
+        fi
+        output="$2"
+        shift 2
+        ;;
+      -o=*|--output=*)
+        output="${1#*=}" 
+        shift 1
+        ;;
+      *)
+        age_args+=("$1")
+        shift 1
+        ;;
+    esac
+  done
+
+  if [[ -n "$output" ]]; then
+    age -d "${age_args[@]}" | gzip -d > "$output"
+  else
+    age -d "${age_args[@]}" | gzip -d
+  fi
+}
