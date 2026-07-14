@@ -84,7 +84,12 @@ echo "Syncing dotfiles from $DOTFILES_DIR to $HOME/..."
 
 if should_sync bash; then
   echo "Syncing bash configuration files..."
-  cp $CP_FLAGS "$DOTFILES_DIR/bash/." "$HOME/"
+  cp $CP_FLAGS "$DOTFILES_DIR/bash/.bashrc" "$HOME/.dotfiles.bashrc"
+  BASH_HOOK='[ -f ~/.dotfiles.bashrc ] && source ~/.dotfiles.bashrc'
+  if ! grep -qF "$BASH_HOOK" "$HOME/.bashrc" 2>/dev/null; then
+    echo "$BASH_HOOK" >> "$HOME/.bashrc"
+    [[ "$VERBOSE" -eq 1 ]] && echo "Added source hook to $HOME/.bashrc"
+  fi
   echo "Bash configuration sync done!"
 fi
 
