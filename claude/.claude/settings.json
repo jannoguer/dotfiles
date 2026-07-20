@@ -1,0 +1,18 @@
+{
+  "awaySummaryEnabled": false,
+  "autoUpdatesChannel": "stable",
+  "theme": "dark",
+  "outputStyle": "Concise",
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh",
+    "refreshInterval": 5
+  },
+  "permissions": {
+    "allow": [
+        "Skill",
+        "WebFetch",
+        "WebSearch"
+    ]
+  }
+}
