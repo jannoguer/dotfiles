@@ -26,6 +26,9 @@ rl_block=$(get_block_from "$input" rate_limits)
 rl5h=$(get_num_from "$(get_block_from "$rl_block" five_hour)" used_percentage)
 rl7d=$(get_num_from "$(get_block_from "$rl_block" seven_day)" used_percentage)
 
+cost_block=$(get_block_from "$input" cost)
+cost_usd=$(get_num_from "$cost_block" total_cost_usd)
+
 DIM=$'\033[2m'
 RESET=$'\033[0m'
 
@@ -47,6 +50,10 @@ left="using $model"
 rl_text=""
 [[ -n "$rl5h" ]] && rl_text="$rl_text $(fmt_pct "$rl5h") (5h)"
 [[ -n "$rl7d" ]] && rl_text="$rl_text $(fmt_pct "$rl7d") (7d)"
+
+if [[ -z "$rl_text" && -n "$cost_usd" ]]; then
+  rl_text=$(printf ' $%.2f' "$cost_usd")
+fi
 
 core="${pct_display}${ctx_size_display}"
 
