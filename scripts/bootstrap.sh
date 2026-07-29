@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DOTFILES_DIR="$SCRIPT_DIR/.."
-ALL_MODULES="bash,git,claude,vim,mintty"
+ALL_MODULES="bash,git,claude,vim,mintty,vscode"
 
 usage() {
   cat <<EOF
@@ -19,7 +19,7 @@ Options:
   -v, --verbose           Print each file as it is copied.
   -h, --help              Show this help and exit.
 
-Modules: bash, git, claude, vim, mintty
+Modules: bash, git, claude, vim, mintty, vscode
 
 Examples:
   $(basename "$0")
@@ -122,6 +122,30 @@ if should_sync mintty; then
   elif [[ -n "$SELECTED" ]]; then
     echo "Skipping mintty: not running on Windows (msys/cygwin)."
   fi
+fi
+
+if should_sync vscode; then
+  echo "Syncing vscode configuration files..."
+  # VSCode stores user config in a platform-specific location, so unlike the
+  # other modules its destination is resolved per OS instead of mirroring $HOME.
+  case "$OSTYPE" in
+    darwin*)
+      VSCODE_CODE_DIR="$HOME/Library/Application Support/Code"
+      ;;
+    msys|cygwin|win32)
+      if [[ -n "$APPDATA" ]]; then
+        VSCODE_CODE_DIR="$(cygpath "$APPDATA" 2>/dev/null || echo "$HOME/AppData/Roaming")/Code"
+      else
+        VSCODE_CODE_DIR="$HOME/AppData/Roaming/Code"
+      fi
+      ;;
+    *)
+      VSCODE_CODE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/Code"
+      ;;
+  esac
+  mkdir -p "$VSCODE_CODE_DIR"
+  cp $CP_FLAGS "$DOTFILES_DIR/vscode/User" "$VSCODE_CODE_DIR/"
+  echo "VSCode configuration sync done!"
 fi
 
 echo "Done!"

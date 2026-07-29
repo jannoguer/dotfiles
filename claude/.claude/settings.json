@@ -1,6 +1,5 @@
 {
   "awaySummaryEnabled": false,
-  "autoUpdatesChannel": "stable",
   "theme": "dark",
   "outputStyle": "Concise",
   "statusLine": {

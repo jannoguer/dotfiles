@@ -114,24 +114,3 @@ up() {
     return 1
   fi
 }
-
-scribe() {
-  local note_file="$HOME/.scribe.md"
-  local today
-
-  if [ $# -eq 0 ]; then
-    if [ -f "$note_file" ]; then
-      cat "$note_file"
-    else
-      echo "scribe: No notes taken yet. Write one using: scribe <your note>" >&2
-    fi
-    return
-  fi
-
-  today=$(date '+%Y-%m-%d')
-  if ! grep -qx "## $today" "$note_file" 2>/dev/null; then
-    [ -s "$note_file" ] && echo >> "$note_file"
-    echo "## $today" >> "$note_file"
-  fi
-  echo "- $*" >> "$note_file"
-}
