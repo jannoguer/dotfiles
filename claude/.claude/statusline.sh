@@ -1,88 +1,114 @@
 #!/usr/bin/env bash
 input=$(cat)
 
-get_block_from() {
-  echo "$1" | grep -oP "\"$2\":\{(?:[^{}]|\{[^{}]*\})*\}" | head -1
-}
-get_str_from() {
-  echo "$1" | grep -oP "\"$2\":\"\K[^\"]*" | head -1
-}
-get_num_from() {
-  echo "$1" | grep -oP "\"$2\":\K[0-9.eE+-]+" | head -1
-}
-fmt_pct() {
-  printf '%.0f%%' "$1"
+# Keys are Statuspage component states; "unknown" is the local fallback for
+# before the first fetch answers.
+STATUS_COMPONENT=${STATUSLINE_STATUS_COMPONENT:-Claude Code}
+STATUS_TTL=${STATUSLINE_STATUS_TTL:-120}
+
+declare -A STATUS_SYMBOL=(
+  [unknown]="◌"
+  [operational]="●"
+  [degraded_performance]="●"
+  [partial_outage]="●"
+  [major_outage]="●"
+  [under_maintenance]="●"
+)
+declare -A STATUS_COLOR=(
+  [unknown]=$'\033[38;2;153;153;153m'
+  [operational]=$'\033[38;2;78;186;101m'
+  [degraded_performance]=$'\033[38;2;232;196;106m'
+  [partial_outage]=$'\033[38;2;223;134;102m'
+  [major_outage]=$'\033[38;2;255;107;128m'
+  [under_maintenance]=$'\033[38;2;102;163;223m'
+)
+
+json_block() { grep -oP "\"$2\":\{(?:[^{}]|\{[^{}]*\})*\}" <<<"$1" | head -1; }
+json_str()   { grep -oP "\"$2\":\"\K[^\"]*" <<<"$1" | head -1; }
+json_num()   { grep -oP "\"$2\":\K[0-9.eE+-]+" <<<"$1" | head -1; }
+pct()        { printf '%.0f%%' "$1"; }
+
+# Claude Code redraws this line constantly, so it can never block on the network:
+# serve whatever is cached and refresh in the background.
+service_status() {
+  local dir="${TMPDIR:-/tmp}/claude-statusline"
+  local cache="$dir/service-status" lock="$dir/service-status.lock"
+  local now age=$STATUS_TTL cached
+  mkdir -p "$dir" 2>/dev/null || return
+  now=$(date +%s)
+  # Touching the lock is the timestamp, so claiming a refresh and recording when it
+  # happened is one operation instead of two files that can disagree.
+  [[ -f "$lock" ]] && age=$(( now - $(stat -c %Y "$lock" 2>/dev/null || echo 0) ))
+  if (( age >= STATUS_TTL )); then
+    : > "$lock"
+    (
+      body=$(curl -fsS --max-time 5 https://status.claude.com/api/v2/summary.json 2>/dev/null) || exit 0
+      state=$(grep -oP "\"name\":\"${STATUS_COMPONENT}\",\"status\":\"\K[^\"]+" <<<"$body" | head -1)
+      # Write then rename: a redraw racing this must never read a half-written cache.
+      [[ -n "$state" ]] && printf '%s' "$state" > "$cache.tmp" && mv -f "$cache.tmp" "$cache"
+    ) >/dev/null 2>&1 &
+    disown 2>/dev/null
+  fi
+  cached=$(cat "$cache" 2>/dev/null)
+  [[ -n "${STATUS_SYMBOL[$cached]}" ]] && printf '%s' "$cached"
 }
 
-model_block=$(get_block_from "$input" model)
-model=$(get_str_from "$model_block" display_name)
-model="${model,,}"
+model=$(json_str "$(json_block "$input" model)" display_name)
 
-ctx_block=$(get_block_from "$input" context_window)
-pct=$(get_num_from "$ctx_block" used_percentage)
-ctx_size=$(get_num_from "$ctx_block" context_window_size)
+ctx=$(json_block "$input" context_window)
+used=$(json_num "$ctx" used_percentage)
+size=$(json_num "$ctx" context_window_size)
 
-rl_block=$(get_block_from "$input" rate_limits)
-rl5h=$(get_num_from "$(get_block_from "$rl_block" five_hour)" used_percentage)
-rl7d=$(get_num_from "$(get_block_from "$rl_block" seven_day)" used_percentage)
+rl=$(json_block "$input" rate_limits)
+rl5h=$(json_num "$(json_block "$rl" five_hour)" used_percentage)
+rl7d=$(json_num "$(json_block "$rl" seven_day)" used_percentage)
 
-cost_block=$(get_block_from "$input" cost)
-cost_usd=$(get_num_from "$cost_block" total_cost_usd)
+cost=$(json_num "$(json_block "$input" cost)" total_cost_usd)
 
 DIM=$'\033[2m'
 RESET=$'\033[0m'
 
-pct_display="--"
-[[ -n "$pct" ]] && pct_display=$(fmt_pct "$pct")
+state=$(service_status)
+dot="${STATUS_COLOR[${state:-unknown}]}${STATUS_SYMBOL[${state:-unknown}]}${RESET} "
 
-ctx_size_display=""
-if [[ -n "$ctx_size" ]]; then
-  size_int=${ctx_size%.*}
-  if [[ "$size_int" -ge 1000000 ]]; then
-    ctx_size_display=" of $((size_int / 1000000))M"
+used_display="--"
+[[ -n "$used" ]] && used_display=$(pct "$used")
+
+size_display=""
+if [[ -n "$size" ]]; then
+  bytes=${size%.*}
+  if (( bytes >= 1000000 )); then
+    size_display=" of $(( bytes / 1000000 ))M"
   else
-    ctx_size_display=" of $((size_int / 1000))k"
+    size_display=" of $(( bytes / 1000 ))k"
   fi
 fi
+core="${used_display}${size_display}"
 
-left="using $model"
+extra="" extra_dim=""
+[[ -n "$rl5h" ]] && extra+=" $(pct "$rl5h") (5h)"
+[[ -n "$rl7d" ]] && extra+=" $(pct "$rl7d") (7d)"
+[[ -z "$extra" && -n "$cost" ]] && extra=$(printf ' $%.2f' "$cost")
+[[ -n "$extra" ]] && extra_dim="${DIM}${extra}${RESET}"
 
-rl_text=""
-[[ -n "$rl5h" ]] && rl_text="$rl_text $(fmt_pct "$rl5h") (5h)"
-[[ -n "$rl7d" ]] && rl_text="$rl_text $(fmt_pct "$rl7d") (7d)"
+left="using ${model,,}"
 
-if [[ -z "$rl_text" && -n "$cost_usd" ]]; then
-  rl_text=$(printf ' $%.2f' "$cost_usd")
-fi
-
-core="${pct_display}${ctx_size_display}"
-
-reserve=${STATUSLINE_RESERVE:-4}
 avail=0
-[[ -n "$COLUMNS" && "$COLUMNS" -gt 0 ]] && avail=$(( COLUMNS - reserve ))
+[[ -n "$COLUMNS" && "$COLUMNS" -gt 0 ]] && avail=$(( COLUMNS - ${STATUSLINE_RESERVE:-4} ))
 
-right_plain="${core}${rl_text}"
-right_colored="${core}${DIM}${rl_text}${RESET}"
-[[ -z "$rl_text" ]] && right_colored="$core"
-
-fits() {
-  [[ "$avail" -le 0 ]] || (( ${#left} + 2 + ${#1} <= avail ))
-}
-
-if ! fits "$right_plain"; then
-  right_plain="$core"
-  right_colored="$core"
-fi
-if ! fits "$right_plain"; then
-  right_plain="$pct_display"
-  right_colored="$pct_display"
-fi
+# Shed detail until the line fits. Widths are measured on the plain variant because
+# ${#…} counts the invisible ANSI bytes in the dimmed one; 4 = dot, its space, min gap.
+plain=("${core}${extra}" "$core" "$used_display")
+shown=("${core}${extra_dim}" "$core" "$used_display")
+for i in 0 1 2; do
+  right_plain=${plain[i]} right=${shown[i]}
+  (( avail <= 0 || ${#left} + 4 + ${#right_plain} <= avail )) && break
+done
 
 gap=2
-if [[ "$avail" -gt 0 ]]; then
-  pad=$(( avail - ${#left} - ${#right_plain} ))
-  [[ "$pad" -lt 2 ]] && pad=2
-  gap=$pad
+if (( avail > 0 )); then
+  gap=$(( avail - ${#left} - 2 - ${#right_plain} ))
+  (( gap < 2 )) && gap=2
 fi
 
-printf '%s%*s%s\n' "$left" "$gap" '' "$right_colored"
+printf '%s%*s%s%s\n' "$left" "$gap" '' "$dot" "$right"

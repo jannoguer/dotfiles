@@ -1,3 +1,10 @@
+# Envoirment variables
+export LANG="en_US.UTF-8"
+export LC_CTYPE="en_US.UTF-8"
+export LC_ALL=""
+
+
+# Aliases
 alias c='clear'
 
 alias g='git'
@@ -6,6 +13,8 @@ alias igt='git'
 alias itg='git'
 alias tgi='git'
 
+
+# Functions
 __auto_git_fetch() {
     [ -n "$AUTO_GIT_FETCH_DISABLE" ] && return
 

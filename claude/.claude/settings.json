@@ -1,7 +1,6 @@
 {
   "awaySummaryEnabled": false,
   "theme": "dark",
-  "outputStyle": "Concise",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
