@@ -52,11 +52,11 @@
     "workbench.activityBar.location": "top",
     "workbench.browser.showInTitleBar": false,
     "workbench.colorTheme": "Dark Modern",
-    "workbench.commandPalette.history": 0,
+    "workbench.editor.empty.hint": "hidden",
+    "workbench.iconTheme": "vs-minimal",
+    "workbench.layoutControl.enabled": false,
     "workbench.list.smoothScrolling": true,
     "workbench.secondarySideBar.defaultVisibility": "hidden",
     "workbench.sideBar.location": "right",
-    "workbench.startupEditor": "none",
-    "workbench.layoutControl.enabled": false,
-    "workbench.iconTheme": "vs-minimal"
+    "workbench.startupEditor": "none"
 }

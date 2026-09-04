@@ -1,6 +1,6 @@
 
 
-# (feat | fix | docs | style | refactor | test | chore)[(<scope>)][!]: <subject>
+# <type>[(<scope>)][!]: <subject>
 
 # vim spreadsheet
 # i - insert; esc - quit insert; dd - delete line and copy; p - paste;

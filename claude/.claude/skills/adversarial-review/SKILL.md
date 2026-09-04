@@ -27,15 +27,24 @@ echo "$run"
 
 `$run` is a native path usable by every tool. The three artifacts of a run are `$run-review-a.md`, `$run-review-b.md`, `$run-apply.md`. To find the most recent run from any session or shell: read `<temp>/adversarial-review/LATEST`.
 
+## Model tiers
+
+Resolve once per run, before launching any agent. The primary model is the one this session runs on (stated in the environment block as "You are powered by the model named ..."). Tier order, strongest first: `fable` > `opus` > `sonnet` > `haiku`.
+
+- Reviewers (step 1): one tier below the primary. fable -> `opus`, opus -> `sonnet`, sonnet -> `haiku`. Primary already `haiku`: use `haiku`.
+- Applicator (step 2): same tier as the primary. fable -> `fable`, opus -> `opus`, sonnet -> `sonnet`, haiku -> `haiku`.
+
+Pass the resolved value via the Agent tool's `model` parameter on every launch. Never omit it: an omitted `model` inherits the primary, which makes the reviewers as expensive as the judge. Primary model not recognizable as one of the four tiers: use `sonnet` for reviewers and omit `model` for the applicator so it inherits the primary.
+
 ## Step 1 — two reviewers, in parallel
 
-Launch two `general-purpose` agents in one message, `run_in_background: true`. Identical prompts except the output path (a vs b); independence comes from separate contexts. Wait for both to finish before step 2. Prompt for each:
+Launch two `general-purpose` agents in one message, `run_in_background: true`, `model` set to the reviewer tier from "Model tiers". Identical prompts except the output path (a vs b); independence comes from separate contexts. Wait for both to finish before step 2. Prompt for each:
 
 > Adversarially review these files: <absolute paths>. Assume the code is wrong and hunt for proof: correctness bugs, unhandled edge cases, broken contracts, security holes, misleading names, dead or duplicated logic. You are READ-ONLY on the codebase: do not edit, create, or run anything that mutates state. Write your critique to <$run-review-a.md|$run-review-b.md> as a numbered list; per finding: severity (high/medium/low), file:line, one-sentence defect, concrete failure scenario (input/state -> wrong outcome). No praise, no style nitpicks, no summaries of what the code does. If you find nothing, write exactly one line saying so.
 
 ## Step 2 — applicator
 
-After both logs exist, launch one `general-purpose` agent synchronously (`run_in_background: false`):
+After both logs exist, launch one `general-purpose` agent synchronously (`run_in_background: false`), `model` set to the applicator tier from "Model tiers":
 
 > Read <$run-review-a.md> and <$run-review-b.md>, then the target files: <absolute paths>. For every finding, verify it against the actual code before acting. Apply fixes for valid findings directly to the target files; reject findings that are wrong, speculative, or out of scope. Never suppress errors or weaken types to satisfy a critique. Write <$run-apply.md>: per finding, APPLIED or REJECTED plus a one-line why; end with a 2-3 sentence summary of what changed. Duplicate findings across the two logs count once.
 
@@ -48,3 +57,4 @@ Tell the user: counts of applied vs rejected findings, the changed files, and th
 - On Windows Git Bash `$TMPDIR` is `/tmp`, which PowerShell and the Read tool cannot open — that is why the snippet converts with `cygpath -m` to a `C:/...` path. Do not skip it.
 - Reviewer agents drift into editing if not forbidden explicitly; the READ-ONLY line in the prompt is load-bearing.
 - Pass absolute file paths in agent prompts; agents may resolve relative paths against a different working directory.
+- The `model` override is ignored for `subagent_type: "fork"`; this skill uses `general-purpose` agents precisely so the tier split takes effect.

@@ -1,16 +1,22 @@
 {
   "awaySummaryEnabled": false,
-  "theme": "dark",
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline.sh",
-    "refreshInterval": 5
+  "env": {
+    "CLAUDE_CODE_DISABLE_MOUSE": "1"
   },
+  "model": "opus",
+  "remoteControlAtStartup": false,
+  "theme": "dark",
   "permissions": {
+    "defaultMode": "auto",
     "allow": [
-        "Skill",
-        "WebFetch",
-        "WebSearch"
+      "Skill",
+      "WebFetch",
+      "WebSearch"
     ]
+  },
+  "statusLine": {
+    "command": "~/.claude/statusline.sh",
+    "refreshInterval": 5,
+    "type": "command"
   }
 }

@@ -1,24 +1,21 @@
 # Global Directives
 
 ## Output
-- Zero emojis anywhere: chat, code, comments, commit messages, docs, UI strings, logs.
+- No emojis anywhere: chat, code, comments, commit messages, docs, UI strings, logs.
 
-## Anti-loop
-- Same fix fails 2x → STOP. List attempts, re-diagnose root cause, switch strategy or ask.
-- Never rerun identical failing command. Before any retry: 1-line hypothesis why prior attempt failed.
+## Retries
+- Same fix fails twice: stop. List attempts, re-diagnose the root cause, then switch strategy or ask.
+- Never rerun an identical failing command. State a 1-line hypothesis for the prior failure before any retry.
 
-## Anti-guess
-- Unsure of API/signature/flag/config key → verify in source, types, or docs. Never invent.
-- Ambiguity that changes outcome → state chosen interpretation in 1 line, then proceed.
+## Verification
+- Unsure of an API, signature, flag, or config key: read source, types, or docs first. Never invent.
+- Say "done" or "fixed" only after running the check (test/build/run). Show the command and the decisive output lines, not full logs. Otherwise label the result "unverified".
 
 ## Root cause only
-- Forbidden "fixes": error suppression (empty catch, ignore flags), type escapes (`any`, casts), skipping/deleting failing tests, hardcoding outputs to satisfy checks, lint-disable comments. Symptom patch ≠ fix.
-
-## Proof
-- Claim "done"/"fixed" ONLY with executed verification (test/build/run) + output shown. Otherwise label "unverified".
+- Do not silence errors instead of fixing them: empty catch, `|| true`, `2>/dev/null`, `--no-verify`, `@ts-ignore`/`# type: ignore`, `any` or casts that exist only to quiet a type error, lint-disable comments, skipping or deleting failing tests, hardcoding outputs to satisfy checks. A justified exception needs a comment and user approval.
 
 ## Secrets
-- Never commit secrets, .env, credentials, tokens. Scan diff before every commit.
+- Never commit secrets, tokens, credentials, or `.env` files (`.env.example`/`.env.template` are fine). Scan the diff before every commit.
 
 ## Compaction
-- When compacting, preserve: modified-file list, approaches already tried and failed, active test commands.
+- When compacting, preserve: the original request, modified-file list, approaches tried and failed, active test commands, open questions.
