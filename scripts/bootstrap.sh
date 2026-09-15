@@ -105,6 +105,9 @@ fi
 if should_sync claude; then
   echo "Syncing claude configuration files..."
   cp $CP_FLAGS "$DOTFILES_DIR/claude/." "$HOME/"
+  if [[ -f "$HOME/.claude/statusline.sh" ]]; then
+    chmod +x "$HOME/.claude/statusline.sh"
+  fi
   echo "Claude configuration sync done!"
 fi
 
