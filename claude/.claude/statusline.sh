@@ -1,19 +1,14 @@
 #!/usr/bin/env bash
-input=$(cat)
+LC_ALL=C
+IFS= read -rd '' input
 
-# Keys are Statuspage component states; "unknown" is the local fallback for
-# before the first fetch answers.
+STATUS_URL=https://status.claude.com/api/v2/summary.json
 STATUS_COMPONENT=${STATUSLINE_STATUS_COMPONENT:-Claude Code}
 STATUS_TTL=${STATUSLINE_STATUS_TTL:-120}
+RESERVE=${STATUSLINE_RESERVE:-4}
 
-declare -A STATUS_SYMBOL=(
-  [unknown]="◌"
-  [operational]="●"
-  [degraded_performance]="●"
-  [partial_outage]="●"
-  [major_outage]="●"
-  [under_maintenance]="●"
-)
+DIM=$'\033[2m'
+RESET=$'\033[0m'
 declare -A STATUS_COLOR=(
   [unknown]=$'\033[38;2;153;153;153m'
   [operational]=$'\033[38;2;78;186;101m'
@@ -23,92 +18,94 @@ declare -A STATUS_COLOR=(
   [under_maintenance]=$'\033[38;2;102;163;223m'
 )
 
-json_block() { grep -oP "\"$2\":\{(?:[^{}]|\{[^{}]*\})*\}" <<<"$1" | head -1; }
-json_str()   { grep -oP "\"$2\":\"\K[^\"]*" <<<"$1" | head -1; }
-json_num()   { grep -oP "\"$2\":\K[0-9.eE+-]+" <<<"$1" | head -1; }
-pct()        { printf '%.0f%%' "$1"; }
+# A JSON object nested up to two levels deep; bash ERE has no recursion.
+OBJ='[{]([^{}]|[{]([^{}]|[{][^{}]*[}])*[}])*[}]'
+SEP='[[:space:]]*:[[:space:]]*'
 
-# Claude Code redraws this line constantly, so it can never block on the network:
-# serve whatever is cached and refresh in the background.
-service_status() {
-  local dir="${TMPDIR:-/tmp}/claude-statusline"
-  local cache="$dir/service-status" lock="$dir/service-status.lock"
-  local now age=$STATUS_TTL cached
-  mkdir -p "$dir" 2>/dev/null || return
-  now=$(date +%s)
-  # Touching the lock is the timestamp, so claiming a refresh and recording when it
-  # happened is one operation instead of two files that can disagree.
-  [[ -f "$lock" ]] && age=$(( now - $(stat -c %Y "$lock" 2>/dev/null || echo 0) ))
-  if (( age >= STATUS_TTL )); then
-    : > "$lock"
-    (
-      body=$(curl -fsS --max-time 5 https://status.claude.com/api/v2/summary.json 2>/dev/null) || exit 0
-      state=$(grep -oP "\"name\":\"${STATUS_COMPONENT}\",\"status\":\"\K[^\"]+" <<<"$body" | head -1)
-      # Write then rename: a redraw racing this must never read a half-written cache.
-      [[ -n "$state" ]] && printf '%s' "$state" > "$cache.tmp" && mv -f "$cache.tmp" "$cache"
-    ) >/dev/null 2>&1 &
-    disown 2>/dev/null
-  fi
-  cached=$(cat "$cache" 2>/dev/null)
-  [[ -n "${STATUS_SYMBOL[$cached]}" ]] && printf '%s' "$cached"
+json_obj() { [[ $1 =~ \"$2\"$SEP($OBJ) ]] && printf -v "$3" '%s' "${BASH_REMATCH[1]}"; }
+json_str() { [[ $1 =~ \"$2\"$SEP\"([^\"]*)\" ]] && printf -v "$3" '%s' "${BASH_REMATCH[1]}"; }
+json_num() { [[ $1 =~ \"$2\"$SEP(-?[0-9]+(\.[0-9]+)?) ]] && printf -v "$3" '%s' "${BASH_REMATCH[1]}"; }
+
+fetch_status() {
+  local cache=$1 body obj
+  body=$(curl -fsS --max-time 5 "$STATUS_URL") || return
+  while [[ $body =~ ([{][^{}]*[}])(.*) ]]; do
+    obj=${BASH_REMATCH[1]} body=${BASH_REMATCH[2]}
+    [[ $obj == *"\"name\":\"$STATUS_COMPONENT\""* ]] || continue
+    json_str "$obj" status obj || return
+    printf '%s' "$obj" > "$cache.tmp" && mv -f "$cache.tmp" "$cache"
+    return
+  done
 }
 
-model=$(json_str "$(json_block "$input" model)" display_name)
+# Runs on every redraw, so it never waits on the network: it serves the cached
+# state and refreshes in the background once per TTL. The lock holds the epoch
+# of the last refresh attempt.
+service_status() {
+  local dir="${TMPDIR:-/tmp}/claude-statusline" cache lock claimed=0 cached=""
+  cache="$dir/service-status" lock="$cache.lock"
+  [[ -d $dir ]] || mkdir -p "$dir" || return
+  [[ -f $lock ]] && read -r claimed < "$lock"
+  [[ $claimed =~ ^[0-9]+$ ]] || claimed=0
+  if (( EPOCHSECONDS - claimed >= STATUS_TTL )); then
+    printf '%s' "$EPOCHSECONDS" > "$lock"
+    fetch_status "$cache" </dev/null >/dev/null 2>&1 &
+  fi
+  [[ -f $cache ]] && read -r cached < "$cache"
+  [[ -n $cached && -n ${STATUS_COLOR[$cached]} ]] && printf -v "$1" '%s' "$cached"
+}
 
-ctx=$(json_block "$input" context_window)
-used=$(json_num "$ctx" used_percentage)
-size=$(json_num "$ctx" context_window_size)
+model='' used='' size='' rl5h='' rl7d='' cost='' obj='' ctx='' rl=''
+json_obj "$input" model obj && json_str "$obj" display_name model
+json_obj "$input" context_window ctx && {
+  json_num "$ctx" used_percentage used
+  json_num "$ctx" context_window_size size
+}
+json_obj "$input" rate_limits rl && {
+  json_obj "$rl" five_hour obj && json_num "$obj" used_percentage rl5h
+  json_obj "$rl" seven_day obj && json_num "$obj" used_percentage rl7d
+}
+json_obj "$input" cost obj && json_num "$obj" total_cost_usd cost
 
-rl=$(json_block "$input" rate_limits)
-rl5h=$(json_num "$(json_block "$rl" five_hour)" used_percentage)
-rl7d=$(json_num "$(json_block "$rl" seven_day)" used_percentage)
-
-cost=$(json_num "$(json_block "$input" cost)" total_cost_usd)
-
-DIM=$'\033[2m'
-RESET=$'\033[0m'
-
-state=$(service_status)
-dot="${STATUS_COLOR[${state:-unknown}]}${STATUS_SYMBOL[${state:-unknown}]}${RESET} "
+state=unknown symbol='●'
+service_status state
+[[ $state == unknown ]] && symbol='◌'
+dot="${STATUS_COLOR[$state]}$symbol$RESET "
 
 used_display="--"
-[[ -n "$used" ]] && used_display=$(pct "$used")
+[[ -n $used ]] && printf -v used_display '%.0f%%' "$used"
 
 size_display=""
-if [[ -n "$size" ]]; then
-  bytes=${size%.*}
-  if (( bytes >= 1000000 )); then
-    size_display=" of $(( bytes / 1000000 ))M"
+if [[ -n $size ]]; then
+  size=${size%.*}
+  if (( size >= 1000000 )); then
+    size_display=" of $(( size / 1000000 ))M"
   else
-    size_display=" of $(( bytes / 1000 ))k"
+    size_display=" of $(( size / 1000 ))k"
   fi
 fi
-core="${used_display}${size_display}"
+core="$used_display$size_display"
 
-extra="" extra_dim=""
-[[ -n "$rl5h" ]] && extra+=" $(pct "$rl5h") (5h)"
-[[ -n "$rl7d" ]] && extra+=" $(pct "$rl7d") (7d)"
-[[ -z "$extra" && -n "$cost" ]] && extra=$(printf ' $%.2f' "$cost")
-[[ -n "$extra" ]] && extra_dim="${DIM}${extra}${RESET}"
+extra=""
+[[ -n $rl5h ]] && printf -v extra '%s %.0f%% (5h)' "$extra" "$rl5h"
+[[ -n $rl7d ]] && printf -v extra '%s %.0f%% (7d)' "$extra" "$rl7d"
+[[ -z $extra && -n $cost ]] && printf -v extra ' $%.2f' "$cost"
 
-left="using ${model,,}"
+left="using ${model:-?}"
+left=${left,,}
 
 avail=0
-[[ -n "$COLUMNS" && "$COLUMNS" -gt 0 ]] && avail=$(( COLUMNS - ${STATUSLINE_RESERVE:-4} ))
+[[ $COLUMNS =~ ^[0-9]+$ ]] && avail=$(( COLUMNS - RESERVE ))
 
-# Shed detail until the line fits. Widths are measured on the plain variant because
-# ${#…} counts the invisible ANSI bytes in the dimmed one; 4 = dot, its space, min gap.
-plain=("${core}${extra}" "$core" "$used_display")
-shown=("${core}${extra_dim}" "$core" "$used_display")
+# Shed detail until the line fits; widths come from the undecorated variant
+# because ${#...} counts the invisible ANSI bytes. 2 = dot plus its space.
+plain=("$core$extra" "$core" "$used_display")
+shown=("$core${extra:+$DIM$extra$RESET}" "$core" "$used_display")
 for i in 0 1 2; do
   right_plain=${plain[i]} right=${shown[i]}
-  (( avail <= 0 || ${#left} + 4 + ${#right_plain} <= avail )) && break
-done
-
-gap=2
-if (( avail > 0 )); then
   gap=$(( avail - ${#left} - 2 - ${#right_plain} ))
-  (( gap < 2 )) && gap=2
-fi
+  (( avail <= 0 || gap >= 2 )) && break
+done
+(( gap < 2 )) && gap=2
 
 printf '%s%*s%s%s\n' "$left" "$gap" '' "$dot" "$right"
