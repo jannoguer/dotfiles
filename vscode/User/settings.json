@@ -6,7 +6,7 @@
     "editor.cursorSmoothCaretAnimation": "on",
     "editor.cursorStyle": "block",
     "editor.detectIndentation": false,
-    "editor.fontFamily": "'JetBrains Mono', Consolas, 'Courier New', monospace",
+    "editor.fontFamily": "'JetBrains Mono NL', Consolas, 'Courier New', monospace",
     "editor.fontLigatures": false,
     "editor.fontSize": 14,
     "editor.hideCursorInOverviewRuler": true,
