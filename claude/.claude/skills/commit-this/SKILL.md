@@ -1,6 +1,6 @@
 ---
 name: commit-this
-description: Commit the changes the user named, with a conventional subject-only message. Use when asked to commit this, commit staged changes, commit current work, commit these files, or save work to git. Refuses to guess what to stage, enforces the message template and the 50-char limit, and hard-stops on a repo state that cannot safely take a commit. Not for pushing, amending, squashing, or writing a message without committing.
+description: Commit the changes the user named, with a conventional subject-only message. Use when asked to commit this, commit staged changes, commit current work, commit these files, or save work to git. Refuses to guess what to stage, enforces the message template and the 50-char target with a 72-char hard cap, and hard-stops on a repo state that cannot safely take a commit. Not for pushing, amending, squashing, or writing a message without committing.
 ---
 
 # Commit This
@@ -25,7 +25,8 @@ and *what to call it*.
 - A repository with **no commits at all** takes exactly `initial commit`. Nothing else.
   (An unborn *branch* in a repo that already has history - `git checkout --orphan` -
   is not this case and takes a normal templated message.)
-- 50 characters or under, counted in characters, not bytes.
+- Target 50 characters or under; hard cap 72. Over 50 warns, over 72 blocks.
+  Counted in characters, not bytes.
 - Subject only: single line, no body, no trailers, no `Co-Authored-By`, no emoji.
 - Never `--no-verify`, never `--amend`, never `git push`.
 - One commit per invocation.
@@ -129,9 +130,10 @@ request and a second invocation.
   user decide. Amending is not yours to do.
 - **`git add` on a conflicted file marks it resolved**, which is why the gate runs
   before any staging inside `--commit`, not after.
-- **50 chars is the whole subject**, type and scope included, and it is counted in
+- **The length is the whole subject**, type and scope included, and it is counted in
   characters - accented and CJK subjects are measured the same under any locale.
-  `refactor(parser): rewrite the whole tokenizer today` is 51 and is rejected.
+  Write for 50. `refactor(parser): rewrite the whole tokenizer today` is 51: it
+  commits with a WARN, so shorten it if you can. Only 73 and over is rejected.
 - **A trailing space is a rejection, not a trim.** Git would strip it, leaving a
   message the script never validated, so the script refuses instead.
 - **`--paths` with a path that matches nothing** fails with git's own `fatal:
@@ -158,7 +160,8 @@ request and a second invocation.
 | `BLOCK: nothing is staged` | index empty | the `FIX:` line is written for the intent you passed - read it, it says which of the three cases you are in |
 | `BLOCK: message does not match the template` | bad type, missing `: `, or a subject starting with a space | rewrite and re-run |
 | `BLOCK: this repository has no commits yet...` | empty repo | use exactly `initial commit` |
-| `BLOCK: message is N characters` | over 50 | shorten; N is characters, so trust it |
+| `BLOCK: message is N characters` | over the 72 hard cap | shorten; N is characters, so trust it |
+| `WARN: message is N characters` | 51-72, over the 50 target | commits anyway; tighten the subject when it reads fine shorter |
 | `BLOCK: contains an emoji` / `a control character` / `leading or trailing whitespace` | message is not plain single-line text | retype it |
 | `BLOCK: a merge is in progress` / `unresolved merge conflicts` / `a rebase is in progress` | mid-operation | report the FIX line, do **not** run it yourself |
 | `BLOCK: detached HEAD` | the commit would be unreachable | report the FIX line and stop |

@@ -116,7 +116,11 @@ validate_message() { # $1 = message, $2 = FIRST_COMMIT (yes|no)
   fi
 
   n=$(char_count "$m")
-  [ "$n" -le 50 ] || block "message is $n characters, limit is 50: $m" "shorten the subject"
+  if [ "$n" -gt 72 ]; then
+    block "message is $n characters, hard cap is 72: $m" "shorten the subject; aim for 50 or under"
+  elif [ "$n" -gt 50 ]; then
+    warn "message is $n characters, over the 50-char target (hard cap 72): $m"
+  fi
 }
 
 # --------------------------------------------------------------- repo state
