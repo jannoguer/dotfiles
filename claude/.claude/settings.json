@@ -1,22 +1,23 @@
 {
-  "awaySummaryEnabled": false,
-  "env": {
-    "CLAUDE_CODE_DISABLE_MOUSE": "1"
-  },
-  "model": "opus",
-  "remoteControlAtStartup": false,
-  "theme": "dark",
-  "permissions": {
-    "defaultMode": "auto",
-    "allow": [
-      "Skill",
-      "WebFetch",
-      "WebSearch"
-    ]
-  },
-  "statusLine": {
-    "command": "~/.claude/statusline.sh",
-    "refreshInterval": 5,
-    "type": "command"
-  }
+    "awaySummaryEnabled": false,
+    "env": {
+        "CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN": "1",
+        "CLAUDE_CODE_DISABLE_MOUSE": "1"
+    },
+    "model": "opus",
+    "permissions": {
+        "allow": [
+            "Skill",
+            "WebFetch",
+            "WebSearch"
+        ],
+        "defaultMode": "auto"
+    },
+    "remoteControlAtStartup": false,
+    "statusLine": {
+        "command": "~/.claude/statusline.sh",
+        "refreshInterval": 5,
+        "type": "command"
+    },
+    "theme": "dark"
 }
