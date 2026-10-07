@@ -3,3 +3,4 @@ ThemeDark=xterm
 FontHeight=9
 Columns=97
 BackgroundColour=31,31,31
+ConfirmExit=no
