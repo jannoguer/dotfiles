@@ -2,7 +2,8 @@
     "awaySummaryEnabled": false,
     "env": {
         "CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN": "1",
-        "CLAUDE_CODE_DISABLE_MOUSE": "1"
+        "CLAUDE_CODE_DISABLE_MOUSE": "1",
+        "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
     },
     "model": "opus",
     "permissions": {

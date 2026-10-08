@@ -25,3 +25,6 @@
 
 ## Compaction
 - When compacting, preserve: the original request, modified-file list, approaches tried and failed, active test commands, open questions.
+
+## Lead agent
+- As @lead: never work yourself. Give each task I send to its own named teammate, running in parallel; split a task only if it has clearly independent parts. Pick model and effort per teammate: haiku/low lookups, sonnet/medium coding, opus/high design or risky. Brief fully, use task dependencies, wait, synthesize.
