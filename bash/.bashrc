@@ -46,80 +46,23 @@ case ";${PROMPT_COMMAND:-};" in
     *) PROMPT_COMMAND="__auto_git_fetch;${PROMPT_COMMAND:-}" ;;
 esac
 
-whisper() {
-  gzip -9 | age -e "$@"
-}
-
-yell() {
-  local output=""
-  local age_args=()
-
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      -o|--output)
-        if [[ -z "$2" ]]; then
-          echo "yell: error: $1 requires a file argument." >&2
-          return 1
-        fi
-        output="$2"
-        shift 2
-        ;;
-      -o=*|--output=*)
-        output="${1#*=}" 
-        shift 1
-        ;;
-      *)
-        age_args+=("$1")
-        shift 1
-        ;;
-    esac
-  done
-
-  if [[ -n "$output" ]]; then
-    age -d "${age_args[@]}" | gzip -d > "$output" || { rm -f "$output"; return 1; }
-  else
-    age -d "${age_args[@]}" | gzip -d
-  fi
-}
-
 portal() {
   local f="$HOME/.portals" d
   touch "$f"
 
-  if [ "$1" = "set" ]; then
-    [ -n "$2" ] || { echo "portal: set needs a name" >&2; return 1; }
-    grep -v "^$2 " "$f" > "${f}.tmp" 2>/dev/null || true
-    mv "${f}.tmp" "$f" 2>/dev/null || true
-    echo "$2 $(pwd)" >> "$f"
-  elif [ "$1" = "go" ]; then
-    d=$(grep "^$2 " "$f" | cut -d' ' -f2-)
-    [ -n "$d" ] || { echo "portal: unknown: $2" >&2; return 1; }
-    cd "$d"
-  elif [ "$1" = "list" ]; then
-    cat "$f"
-  fi
-}
-
-up() {
-  local p c i
-  if [ -z "$1" ]; then
-    cd ..
-  elif [[ "$1" =~ ^[0-9]+$ ]]; then
-    p=""
-    for ((i=0; i<$1; i++)); do
-      p="../$p"
-    done
-    cd "${p:-.}"
-  else
-    c="${PWD%/*}"
-    while [ -n "$c" ]; do
-      if [ "${c##*/}" = "$1" ]; then
-        cd "$c"
-        return
-      fi
-      c="${c%/*}"
-    done
-    echo "up: no ancestor: $1" >&2
-    return 1
-  fi
+  case "$1" in
+    ""|list)
+      cat "$f" ;;
+    set)
+      [ -n "$2" ] || { echo "portal: set needs a name" >&2; return 1; }
+      d=$(cd "${3:-.}" && pwd) || return 1
+      grep -v "^$2 " "$f" > "${f}.tmp"; mv "${f}.tmp" "$f"
+      echo "$2 $d" >> "$f" ;;
+    go)
+      d=$(grep "^$2 " "$f" | cut -d' ' -f2-)
+      [ -n "$d" ] || { echo "portal: unknown: $2" >&2; return 1; }
+      cd "$d" ;;
+    *)
+      echo "usage: portal [list] | set NAME [DIR] | go NAME" >&2; return 1 ;;
+  esac
 }
