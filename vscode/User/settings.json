@@ -53,6 +53,7 @@
     "workbench.browser.showInTitleBar": false,
     "workbench.colorTheme": "Dark Modern",
     "workbench.editor.empty.hint": "hidden",
+    "workbench.editor.tabActionCloseVisibility": false,
     "workbench.iconTheme": "vs-minimal",
     "workbench.layoutControl.enabled": false,
     "workbench.list.smoothScrolling": true,
