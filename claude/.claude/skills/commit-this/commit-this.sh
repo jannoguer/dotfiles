@@ -258,6 +258,7 @@ scan_index() {
   done < <(git diff --cached --name-only -z --diff-filter=ACMR)
 
   if [ "$nf" -gt 0 ]; then
+    # One batched call: a cat-file per file makes large commits take minutes.
     sizes=$(printf ':%s\0' "${FILES[@]}" | git cat-file --batch-check='%(objectsize)' -z 2>/dev/null)
     i=0
     while IFS= read -r line; do
@@ -288,6 +289,7 @@ fi
 # ------------------------------------------------------------------ commit
 counts
 remote_check
+# Gate before staging: 'git add' on a conflicted file would mark it resolved.
 gate
 validate_message "$MSG" "$FIRST_COMMIT"
 if [ "$blocked" -eq 1 ]; then
