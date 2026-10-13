@@ -5,17 +5,24 @@
 #       Report repo state. --staged additionally requires a non-empty index and
 #       scans the staged diff. Never mutates anything.
 #
-#   commit-this.sh --commit --message "<subject>" (--index-as-is | --all | --paths <p>...)
+#   commit-this.sh --commit --message "<subject>" [--push] (--index-as-is | --all | --paths <p>...)
 #       Re-runs the identical gate, stages per the given intent, re-checks, commits,
 #       and verifies what was actually recorded. The gate cannot be skipped.
+#       --push pushes the new commit afterwards; never forced.
+#
+# Both modes compare the branch against its upstream via ls-remote: read-only,
+# nothing is fetched or merged.
 #
 # Vocabulary: INFO / WARN / BLOCK (+FIX) lines, then RESULT: OK|BLOCKED.
 # Exit 0 = OK, 1 = BLOCKED (nothing committed), 2 = committed but the recorded
-# message does not match what was validated (a hook rewrote it).
+# message does not match what was validated (a hook rewrote it), 3 = committed
+# but the push failed.
 set -u
+export GIT_TERMINAL_PROMPT=0
 
 MODE=""
 STAGED=0
+PUSH=0
 MSG=""
 INTENT=""
 PATHS=()
@@ -33,10 +40,12 @@ while [ $# -gt 0 ]; do
     --check)       MODE=check ;;
     --commit)      MODE=commit ;;
     --staged)      STAGED=1 ;;
+    --push)        PUSH=1 ;;
     --message)     shift; [ $# -gt 0 ] || die "--message needs a value" "quote the subject"; MSG="$1" ;;
     --index-as-is) INTENT=index ;;
     --all)         INTENT=all ;;
-    --paths)       INTENT=paths; shift; while [ $# -gt 0 ]; do PATHS[$NPATHS]="$1"; NPATHS=$((NPATHS+1)); shift; done; break ;;
+    --paths)       INTENT=paths
+                   while [ $# -gt 1 ] && [ "${2#--}" = "$2" ]; do PATHS[$NPATHS]="$2"; NPATHS=$((NPATHS+1)); shift; done ;;
     *)             die "unknown argument: $1" "see the usage block at the top of commit-this.sh" ;;
   esac
   shift
@@ -46,6 +55,7 @@ case "$MODE" in
   check)
     [ -z "$MSG" ]    || die "--message is not valid with --check" "drop it, or use --commit"
     [ -z "$INTENT" ] || die "a staging intent is not valid with --check" "--check never stages"
+    [ "$PUSH" -eq 0 ] || die "--push is not valid with --check" "--check never pushes"
     ;;
   commit)
     [ -n "$MSG" ] || die "--commit needs --message \"<subject>\"" \
@@ -152,6 +162,31 @@ counts() {
       "untracked=$(git ls-files --others --exclude-standard | wc -l | tr -d ' ')"
 }
 
+remote_check() {
+  local remote ref out sha to=()
+  git rev-parse -q --verify HEAD >/dev/null && git symbolic-ref -q HEAD >/dev/null || return 0
+  IFS='|' read -r remote ref <<< "$(git for-each-ref --format='%(upstream:remotename)|%(upstream:remoteref)' "$(git symbolic-ref HEAD)")"
+  if [ -z "$remote" ] || [ -z "$ref" ]; then
+    say "INFO: remote=no upstream configured, not checked"
+    return
+  fi
+  command -v timeout >/dev/null && to=(timeout 15)  # macOS ships no timeout
+  if ! out=$(${to[@]+"${to[@]}"} git ls-remote "$remote" "$ref"); then
+    warn "could not reach remote '$remote', so it was not checked for new commits"
+    return
+  fi
+  sha=$(printf '%s\n' "$out" | awk -v r="$ref" '$2 == r { print $1 }')
+  if [ -z "$sha" ]; then
+    warn "upstream $remote/${ref#refs/heads/} no longer exists on the remote"
+  elif ! git cat-file -e "$sha^{commit}" 2>/dev/null; then
+    warn "$remote/${ref#refs/heads/} has commits you do not have locally; the user should pull before pushing"
+  elif ! git merge-base --is-ancestor "$sha" HEAD; then
+    warn "behind $remote/${ref#refs/heads/} by $(git rev-list --count "HEAD..$sha") commit(s); the user should pull before pushing"
+  else
+    say "INFO: remote=$remote/${ref#refs/heads/} has nothing new"
+  fi
+}
+
 gate() {
   local eff loc
   # Identity: honours GIT_AUTHOR_*/GIT_COMMITTER_* env vars, config, and auto-detection.
@@ -216,6 +251,7 @@ scan_index() {
     FILES[$nf]="$f"
     nf=$((nf + 1))
     case "$f" in
+      .env.example|*/.env.example|.env.template|*/.env.template|*.pub) : ;;
       .env|*/.env|.env.*|*/.env.*|*.env|*.pem|*.p12|*.pfx|*.key|*id_rsa*|*.keystore|*credentials.json|*.netrc|*.htpasswd)
         warn "sensitive-looking file staged: $f" ;;
     esac
@@ -233,7 +269,7 @@ scan_index() {
     done <<< "$sizes"
   fi
 
-  if git diff --cached -U0 | grep -qE -- '-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|xox[baprs]-[A-Za-z0-9-]{10,}'; then
+  if git diff --cached -U0 | grep -E '^\+' | grep -qE -- '-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|xox[baprs]-[A-Za-z0-9-]{10,}'; then
     warn "staged diff contains a credential-shaped string"
   fi
 }
@@ -241,6 +277,7 @@ scan_index() {
 # ------------------------------------------------------------------- check
 if [ "$MODE" = check ]; then
   counts
+  remote_check
   gate
   [ "$STAGED" -eq 1 ] && scan_index
   if [ "$blocked" -eq 1 ]; then say "RESULT: BLOCKED"; exit 1; fi
@@ -250,6 +287,7 @@ fi
 
 # ------------------------------------------------------------------ commit
 counts
+remote_check
 gate
 validate_message "$MSG" "$FIRST_COMMIT"
 if [ "$blocked" -eq 1 ]; then
@@ -289,4 +327,25 @@ if [ "$recorded" != "$MSG" ]; then
 fi
 
 say "COMMITTED: $(git log -1 --pretty='%h %s')"
+
+if [ "$PUSH" -eq 1 ]; then
+  if git rev-parse -q --verify '@{u}' >/dev/null; then
+    push=(git push)
+  elif [ "$(git remote | wc -l | tr -d ' ')" -eq 1 ]; then
+    push=(git push -u "$(git remote)" HEAD)
+  else
+    say "BLOCK: no upstream and not exactly one remote, so the push target is ambiguous"
+    say "  FIX: ask the user which remote, then 'git push -u <remote> HEAD'"
+    say "COMMITTED-NOT-PUSHED"; say "RESULT: BLOCKED"; exit 3
+  fi
+  if ! out=$("${push[@]}" 2>&1); then
+    say "$out"
+    say "BLOCK: '${push[*]}' failed"
+    say "  FIX: read git's output above; on a non-fast-forward rejection the user must pull first."
+    say "       Never force: if only a destructive push would succeed, tell the user and let them run it."
+    say "COMMITTED-NOT-PUSHED"; say "RESULT: BLOCKED"; exit 3
+  fi
+  say "$out"
+  say "PUSHED: ${push[*]}"
+fi
 say "RESULT: OK"
