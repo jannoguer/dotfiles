@@ -5,7 +5,7 @@ IFS= read -rd '' input
 STATUS_URL=https://status.claude.com/api/v2/summary.json
 STATUS_COMPONENT='Claude Code'
 STATUS_FILE=${TMPDIR:-/tmp}/claude-statusline-status
-STATUS_TTL=120
+STATUS_TTL=30
 RESERVE=4
 
 DIM=$'\033[2m'
