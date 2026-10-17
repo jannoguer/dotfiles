@@ -120,7 +120,18 @@ fi
 if should_sync mintty; then
   if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     echo "Syncing mintty configuration files..."
-    cp $CP_FLAGS "$DOTFILES_DIR/mintty/." "$HOME/"
+    cp $CP_FLAGS "$DOTFILES_DIR/mintty/.minttyrc" "$HOME/"
+    if [[ -d "$HOME/.claude" ]]; then
+      cp $CP_FLAGS "$DOTFILES_DIR/mintty/claude.ico" "$HOME/.claude/"
+      CLAUDE_LNK="$(cygpath -wP)\\Claude Code.lnk"
+      # Env-var paths keep the shortcut portable to other PCs
+      create-shortcut.exe \
+        --arguments '-h error /usr/bin/env MSYSTEM=MINGW64 /usr/bin/bash --login -i -c "cd && claude"' \
+        --icon-file '%USERPROFILE%\.claude\claude.ico' \
+        --description 'Claude Code in Git Bash' \
+        '%ProgramFiles%\Git\usr\bin\mintty.exe' "$CLAUDE_LNK"
+      [[ "$VERBOSE" -eq 1 ]] && echo "Created $CLAUDE_LNK"
+    fi
     echo "Mintty configuration sync done!"
   elif [[ -n "$SELECTED" ]]; then
     echo "Skipping mintty: not running on Windows (msys/cygwin)."
