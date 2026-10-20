@@ -53,7 +53,20 @@ service_status() {
   [[ -n $cached && -n ${STATUS_COLOR[$cached]} ]] && printf -v "$1" '%s' "$cached"
 }
 
-model='' effort='' used='' size='' rl5h='' rl7d='' cost=''
+# With "days" the "0d" stays, so a weekly window's last "4h" can't pass for the 5h one.
+countdown() {
+  local s=$(( $2 - EPOCHSECONDS ))
+  (( s < 0 )) && s=0
+  if [[ $3 == days ]]; then
+    printf -v "$1" '%dd%dh' $(( s / 86400 )) $(( s % 86400 / 3600 ))
+  elif (( s >= 3600 )); then
+    printf -v "$1" '%dh%dm' $(( s / 3600 )) $(( s % 3600 / 60 ))
+  else
+    printf -v "$1" '%dm' $(( s / 60 ))
+  fi
+}
+
+model='' effort='' used='' size='' rl5h='' rl7d='' resets5h='' resets7d='' cost=''
 json_obj "$input" model obj && json_str "$obj" display_name model
 json_obj "$input" effort obj && json_str "$obj" level effort
 json_obj "$input" context_window obj && {
@@ -61,8 +74,8 @@ json_obj "$input" context_window obj && {
   json_num "$obj" context_window_size size
 }
 json_obj "$input" rate_limits rl && {
-  json_obj "$rl" five_hour obj && json_num "$obj" used_percentage rl5h
-  json_obj "$rl" seven_day obj && json_num "$obj" used_percentage rl7d
+  json_obj "$rl" five_hour obj && { json_num "$obj" used_percentage rl5h; json_num "$obj" resets_at resets5h; }
+  json_obj "$rl" seven_day obj && { json_num "$obj" used_percentage rl7d; json_num "$obj" resets_at resets7d; }
 }
 json_obj "$input" cost obj && json_num "$obj" total_cost_usd cost
 
@@ -84,9 +97,11 @@ if [[ -n $size ]]; then
   fi
 fi
 
-extra=''
-[[ -n $rl5h ]] && printf -v extra '%s %.0f%% (5h)' "$extra" "$rl5h"
-[[ -n $rl7d ]] && printf -v extra '%s %.0f%% (7d)' "$extra" "$rl7d"
+extra='' eta5h=5h eta7d=7d
+[[ -n $resets5h ]] && countdown eta5h "$resets5h"
+[[ -n $resets7d ]] && countdown eta7d "$resets7d" days
+[[ -n $rl5h ]] && printf -v extra '%s %.0f%% (%s)' "$extra" "$rl5h" "$eta5h"
+[[ -n $rl7d ]] && printf -v extra '%s %.0f%% (%s)' "$extra" "$rl7d" "$eta7d"
 [[ -z $extra && -n $cost ]] && printf -v extra ' $%.2f' "$cost"
 
 left="using ${model:-?}${effort:+ on $effort}"
