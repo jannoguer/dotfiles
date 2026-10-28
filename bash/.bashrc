@@ -66,8 +66,3 @@ portal() {
       echo "usage: portal [list] | set NAME [DIR] | go NAME" >&2; return 1 ;;
   esac
 }
-
-haiku() {
-  claude -p ${1:+"$*"} --model haiku --effort low --no-session-persistence --safe-mode \
-    --system-prompt "Directly output the result in the prompt's language without filler."
-}

@@ -108,6 +108,11 @@ if should_sync claude; then
   if [[ -f "$HOME/.claude/statusline.sh" ]]; then
     chmod +x "$HOME/.claude/statusline.sh"
   fi
+  CLAUDE_HOOK='[ -f ~/.claude/haiku.bash ] && source ~/.claude/haiku.bash'
+  if ! grep -qF "$CLAUDE_HOOK" "$HOME/.bashrc" 2>/dev/null; then
+    echo "$CLAUDE_HOOK" >> "$HOME/.bashrc"
+    [[ "$VERBOSE" -eq 1 ]] && echo "Added haiku source hook to $HOME/.bashrc"
+  fi
   echo "Claude configuration sync done!"
 fi
 
