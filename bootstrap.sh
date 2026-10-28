@@ -3,7 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DOTFILES_DIR="$SCRIPT_DIR/.."
+DOTFILES_DIR="$SCRIPT_DIR"
 ALL_MODULES="bash,git,claude,vim,mintty,vscode"
 
 usage() {
