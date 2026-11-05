@@ -19,7 +19,7 @@ Options:
   -v, --verbose           Print each file as it is copied.
   -h, --help              Show this help and exit.
 
-Modules: bash, git, claude, vim, mintty, vscode
+Modules: ${ALL_MODULES//,/, }
 
 Examples:
   $(basename "$0")
