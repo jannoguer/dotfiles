@@ -203,12 +203,12 @@ sync_path() {
   fi
 }
 
-# Removes a file and any parent directories it leaves empty, stopping at $HOME.
+# Removes a file and any parent directories it leaves empty, stopping before the module root $2.
 remove_stale() {
   local dir
   rm "$1"
   dir="$(dirname "$1")"
-  while [[ "$dir" == "$HOME"/* && -z "$(ls -A "$dir")" ]]; do
+  while [[ "$dir" == "$2"/* && -z "$(ls -A "$dir")" ]]; do
     rmdir "$dir"
     dir="$(dirname "$dir")"
   done
@@ -245,7 +245,7 @@ clean_stale() {
     [[ -f "$dst" ]] || continue
     id="$(git -C "$DOTFILES_DIR" hash-object --no-filters -- "$dst")"
     if [[ "$hist" == *"$nl$path$tab$id$nl"* ]]; then
-      remove_stale "$dst"
+      remove_stale "$dst" "$dst_dir"
       echo "Removed stale $dst"
       REMOVED=$((REMOVED + 1))
     else
