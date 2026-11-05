@@ -1,27 +1,36 @@
-# Global Directives
+# Global rules
 
-## Output
-- No emojis anywhere: chat, code, comments, commit messages, docs, UI strings, logs.
+## Approach
+- Before writing code, stop at the first option that works: don't build it > reuse code in the repo > standard library or platform API > an installed dependency > minimal new code. Justify any new dependency in one sentence.
+- If a request is ambiguous or a simpler approach exists, say so in one sentence, then proceed with the most reasonable reading. Ask only when the choice is costly to reverse.
+- When the user asks a question or wants an assessment, answer and stop. Don't change code.
+- Unsure of an API, signature, flag, or config key: read the source, types, or docs. Never guess.
 
 ## Code
-- Always apply KISS, DRY, and YAGNI: the simplest solution that works, no duplicated logic, nothing built for hypothetical future needs.
-- Prefer the language's standard library and platform-native APIs over third-party dependencies or frameworks. Add one only when the native route would cost substantially more code, effort, or risk.
-- Comment ONLY what the code cannot say (a non-obvious why, a hidden constraint or invariant, a workaround for an external bug, a surprising edge case), in one short line.
-- Never restate the code, narrate steps, add section banners or signature-echoing docstrings, or note the change itself ("added X", "fixed Y"). If code needs a comment to explain what it does, rename or restructure it instead.
-
-## Retries
-- Same fix fails twice: stop. List attempts, re-diagnose the root cause, then switch strategy or ask.
-- Never rerun an identical failing command. State a 1-line hypothesis for the prior failure before any retry.
+- Read the callers and tests of any function or type whose behavior you change.
+- Every changed line traces to the request: no drive-by refactors, renames, or reformatting. Mention unrelated problems instead of fixing them.
+- KISS, DRY, YAGNI: no speculative abstractions, configuration, or handling for impossible cases.
+- Fix the root cause once, where it originates, not at each call site.
+- Never silence errors: no empty catch, `|| true`, suppression comments, disabled lints, skipped tests, or hardcoded outputs to pass a check. If one is truly needed, ask first.
+- Delete what your change made obsolete. No commented-out code, no compatibility shims unless asked.
+- Comment only what the code can't say: a non-obvious why, constraint, or workaround, in one line.
+- New or changed logic gets a test at a real seam. Mock only boundaries (network, disk, clock).
 
 ## Verification
-- Unsure of an API, signature, flag, or config key: read source, types, or docs first. Never invent.
-- Say "done" or "fixed" only after running the check (test/build/run). Show the command and the decisive output lines, not full logs. Otherwise label the result "unverified".
+- Say done, fixed, or passing only after running the check in this session and reading its output. Otherwise say "unverified".
+- A bug is fixed only when the original symptom is retested.
+- Filter long build or test output to the failures or the last ~40 lines; rerun unfiltered only if needed.
+- If the same fix fails twice, stop: list what you tried, re-diagnose, then change strategy or ask. Never rerun an identical failing command.
 
-## Root cause only
-- Do not silence errors instead of fixing them: empty catch, `|| true`, `2>/dev/null`, `--no-verify`, `@ts-ignore`/`# type: ignore`, `any` or casts that exist only to quiet a type error, lint-disable comments, skipping or deleting failing tests, hardcoding outputs to satisfy checks. A justified exception needs a comment and user approval.
+## Output
+- No emojis anywhere: chat, code, comments, commits, docs, logs.
+- Lead with the outcome. Be brief.
+- If anything was skipped or left unverified, say so in the final line.
 
-## Secrets
-- Never commit secrets, tokens, credentials, or `.env` files (`.env.example`/`.env.template` are fine). Scan the diff before every commit.
+## Git
+- Commit or push only when asked. Conventional Commits, imperative subject of at most 72 characters, one logical change per commit.
+- No AI attribution: no Co-Authored-By trailers or "Generated with" lines.
+- Never commit secrets, credentials, or .env files; scan the diff first.
 
 ## Compaction
-- When compacting, preserve: the original request, modified-file list, approaches tried and failed, active test commands, open questions.
+Preserve: the original request, modified files, failed approaches, test commands, open questions.
