@@ -123,8 +123,12 @@ module_paths() {
 }
 
 ensure_bashrc_line() {
-  if [[ -f "$HOME/.bashrc" ]] && grep -qF -- "$1" "$HOME/.bashrc"; then
+  if [[ -f "$HOME/.bashrc" ]] && grep -qxF -- "$1" "$HOME/.bashrc"; then
     return
+  fi
+  # Terminate an unterminated last line so the new one is not glued onto it.
+  if [[ -s "$HOME/.bashrc" && -n "$(tail -c1 "$HOME/.bashrc")" ]]; then
+    echo >> "$HOME/.bashrc"
   fi
   echo "$1" >> "$HOME/.bashrc"
   if [[ "$VERBOSE" -eq 1 ]]; then
