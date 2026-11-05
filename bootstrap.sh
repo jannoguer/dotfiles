@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DOTFILES_DIR="$SCRIPT_DIR"
@@ -141,7 +141,7 @@ if should_sync vscode; then
       VSCODE_CODE_DIR="$HOME/Library/Application Support/Code"
       ;;
     msys|cygwin|win32)
-      if [[ -n "$APPDATA" ]]; then
+      if [[ -n "${APPDATA:-}" ]]; then
         VSCODE_CODE_DIR="$(cygpath "$APPDATA" 2>/dev/null || echo "$HOME/AppData/Roaming")/Code"
       else
         VSCODE_CODE_DIR="$HOME/AppData/Roaming/Code"
