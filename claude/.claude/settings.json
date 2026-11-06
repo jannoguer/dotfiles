@@ -1,4 +1,9 @@
 {
+    "attribution": {
+        "commit": "",
+        "pr": "",
+        "sessionUrl": false
+    },
     "autoCompactWindow": 400000,
     "awaySummaryEnabled": false,
     "env": {
