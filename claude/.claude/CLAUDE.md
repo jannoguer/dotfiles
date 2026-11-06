@@ -29,7 +29,6 @@
 
 ## Git
 - Commit or push only when asked. Conventional Commits, imperative subject of at most 72 characters, one logical change per commit.
-- No AI attribution: no Co-Authored-By trailers or "Generated with" lines.
 - Never commit secrets, credentials, or .env files; scan the diff first.
 
 ## Compaction
