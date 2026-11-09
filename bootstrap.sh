@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DOTFILES_DIR="$SCRIPT_DIR"
-ALL_MODULES="bash,git,claude,vim,mintty,vscode"
+ALL_MODULES="bash,git,claude,vim,vscode"
 
 usage() {
   cat <<EOF
@@ -86,16 +86,6 @@ module_paths() {
     git|claude|vim)
       MOD_SRC="$1"
       MOD_DST="$HOME"
-      ;;
-    mintty)
-      if [[ "$OSTYPE" != "msys" && "$OSTYPE" != "cygwin" ]]; then
-        if [[ -n "$SELECTED" ]]; then
-          echo "Skipping mintty: not running on Windows (msys/cygwin)."
-        fi
-        return 1
-      fi
-      MOD_SRC="mintty/.minttyrc"
-      MOD_DST="$HOME/.minttyrc"
       ;;
     vscode)
       # VSCode stores user config in a platform-specific location, so unlike the
