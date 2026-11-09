@@ -7,7 +7,6 @@
     "autoCompactWindow": 400000,
     "awaySummaryEnabled": false,
     "env": {
-        "CLAUDE_CODE_DISABLE_MOUSE": "1",
         "CLAUDE_CODE_NATIVE_CURSOR": "1",
         "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
     },
