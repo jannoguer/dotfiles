@@ -130,6 +130,10 @@ post_bash() {
   ensure_bashrc_line '[ -f ~/.dotfiles.bashrc ] && source ~/.dotfiles.bashrc'
 }
 
+post_git() {
+  ensure_bashrc_line '[ -f ~/.config/git/autofetch.bash ] && source ~/.config/git/autofetch.bash'
+}
+
 post_claude() {
   if [[ -f "$HOME/.claude/statusline.sh" ]]; then
     chmod +x "$HOME/.claude/statusline.sh"
