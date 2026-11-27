@@ -139,7 +139,6 @@ post_claude() {
     chmod +x "$HOME/.claude/statusline.sh"
   fi
   ensure_bashrc_line '[ -f ~/.claude/haiku.bash ] && source ~/.claude/haiku.bash'
-  ensure_bashrc_line '[ -f ~/.claude/co.bash ] && source ~/.claude/co.bash'
 }
 
 backup_file() {
